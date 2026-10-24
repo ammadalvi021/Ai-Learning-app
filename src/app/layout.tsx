@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./workspace.css";
 
 export const metadata: Metadata = {
   title: "Bloom — Developer Workspace",
   description:
-    "Your developer workspace. Learn JavaScript and AI, practice in the coding lab, and find your flow with five futuristic themes.",
+    "Your developer workspace. Learn JavaScript and AI, practice 20 coding challenges, build three guided projects, and find your flow with five futuristic themes.",
 };
 
 export default function RootLayout({

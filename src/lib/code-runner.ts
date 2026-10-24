@@ -22,6 +22,16 @@ const stringify = (value) => {
   try { return JSON.stringify(value) ?? String(value); }
   catch { return String(value); }
 };
+const equal = (actual, expected) => {
+  if (Object.is(actual, expected)) return true;
+  if (actual === null || expected === null || typeof actual !== 'object' || typeof expected !== 'object') return false;
+  if (Array.isArray(actual) !== Array.isArray(expected)) return false;
+  if (Array.isArray(actual) && actual.length !== expected.length) return false;
+  if (Object.prototype.toString.call(actual) !== Object.prototype.toString.call(expected)) return false;
+  const actualKeys = Object.keys(actual).sort();
+  const expectedKeys = Object.keys(expected).sort();
+  return actualKeys.length === expectedKeys.length && actualKeys.every((key, index) => key === expectedKeys[index] && equal(actual[key], expected[key]));
+};
 self.onmessage = async (event) => {
   const { token, code, functionName, tests } = event.data;
   try {
@@ -34,7 +44,7 @@ self.onmessage = async (event) => {
       const expectedText = stringify(test.expected);
       results.push({
         label: test.label,
-        passed: actualText === expectedText,
+        passed: equal(actual, test.expected),
         expected: expectedText.slice(0, 500),
         actual: actualText.slice(0, 500),
       });

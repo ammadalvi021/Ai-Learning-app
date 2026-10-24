@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   ArrowRight,
   BookOpen,
@@ -12,6 +13,7 @@ import {
   Code2,
   Cpu,
   Flame,
+  FolderCode,
   LayoutDashboard,
   Menu,
   Palette,
@@ -25,17 +27,34 @@ import {
   Zap,
 } from "lucide-react";
 import { tracks, type Lesson } from "@/lib/course";
+import { challenges } from "@/lib/challenges";
+import { projects } from "@/lib/projects";
 import { resetProgress, useLearningProgress } from "@/lib/progress";
 import { setTheme, themes, useTheme } from "@/lib/themes";
 import ThemePicker from "./theme-picker";
 import LessonReader from "./lesson-reader";
-import CodeLab from "./code-lab";
+const CodeLab = dynamic(() => import("./code-lab"), {
+  loading: () => (
+    <p className="feature-loading" role="status">
+      Opening your coding workspace…
+    </p>
+  ),
+});
+const ProjectWorkspace = dynamic(() => import("./project-workspace"), {
+  loading: () => (
+    <p className="feature-loading" role="status">
+      Opening your project workspace…
+    </p>
+  ),
+});
 
-type View = "overview" | "lessons" | "lab" | "progress" | "appearance";
+type View =
+  "overview" | "lessons" | "lab" | "projects" | "progress" | "appearance";
 const navigation = [
   { id: "overview", label: "Overview", Icon: LayoutDashboard },
   { id: "lessons", label: "My learning", Icon: BookOpen },
   { id: "lab", label: "Coding lab", Icon: Terminal },
+  { id: "projects", label: "Guided projects", Icon: FolderCode },
   { id: "progress", label: "My progress", Icon: Trophy },
   { id: "appearance", label: "Appearance", Icon: Palette },
 ] as const;
@@ -186,6 +205,7 @@ export default function LearningApp() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
+  const [activeProjectId, setActiveProjectId] = useState<string>();
   const [mobileMenu, setMobileMenu] = useState(false);
   const [dialog, setDialog] = useState<"help" | "reset" | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -389,7 +409,7 @@ export default function LearningApp() {
             <strong>Personal workspace</strong>
             <small>Learn. Build. Level up.</small>
           </div>
-          <span className="version-badge">V2</span>
+          <span className="version-badge">V3</span>
         </div>
         <div className="nav-label">WORKSPACE</div>
         <nav aria-label="Main navigation">
@@ -403,7 +423,11 @@ export default function LearningApp() {
             >
               <Icon size={18} />
               {label}
-              {id === "lab" && <span className="new-badge">NEW</span>}
+              {id === "projects" && (
+                <span className="new-badge" aria-hidden="true">
+                  NEW
+                </span>
+              )}
               {view === id && <span className="nav-active-dot" />}
             </button>
           ))}
@@ -531,6 +555,11 @@ export default function LearningApp() {
             />
           ) : view === "lab" ? (
             <CodeLab />
+          ) : view === "projects" ? (
+            <ProjectWorkspace
+              key={activeProjectId ?? "default"}
+              initialProjectId={activeProjectId}
+            />
           ) : view === "appearance" ? (
             <>
               <div className="page-heading">
@@ -651,7 +680,7 @@ export default function LearningApp() {
                   </div>
                   <HeroVisual robot={theme === "robot"} />
                   <span className="hero-coordinate">
-                    BUILD_VERSION 02.00 // NO LIMITS TO CURIOSITY
+                    BUILD_VERSION 03.00 // NO LIMITS TO CURIOSITY
                   </span>
                 </section>
               )}
@@ -935,7 +964,7 @@ export default function LearningApp() {
                         <span className="promo-icon">
                           <Terminal size={24} />
                         </span>
-                        <span className="new-badge">NEW IN V2</span>
+                        <span className="new-badge">UPGRADED IN V3</span>
                       </div>
                       <span className="section-kicker">
                         LESS THEORY. MORE KEYSTROKES.
@@ -952,7 +981,8 @@ export default function LearningApp() {
                       <div className="mini-terminal">
                         <span>$ run your-potential.js</span>
                         <span>
-                          <Check size={12} /> 3 challenges ready
+                          <Check size={12} /> {challenges.length} challenges
+                          ready
                         </span>
                         <span className="terminal-cursor">_</span>
                       </div>
@@ -992,6 +1022,51 @@ export default function LearningApp() {
                     </div>
                   </aside>
                 </div>
+              )}
+              {view === "overview" && (
+                <section
+                  className="dashboard-projects"
+                  aria-labelledby="dashboard-projects-title"
+                >
+                  <div className="section-heading">
+                    <div>
+                      <span className="section-kicker">
+                        TURN KNOWLEDGE INTO SOMETHING REAL
+                      </span>
+                      <h2 id="dashboard-projects-title">Your first builds</h2>
+                    </div>
+                    <button
+                      className="text-button"
+                      onClick={() => navigate("projects")}
+                    >
+                      Explore projects <ArrowRight size={14} />
+                    </button>
+                  </div>
+                  <div className="project-launch-grid">
+                    {projects.map((project, index) => (
+                      <button
+                        className="project-launch-card glass-panel"
+                        key={project.id}
+                        onClick={() => {
+                          setActiveProjectId(project.id);
+                          navigate("projects");
+                        }}
+                      >
+                        <span className="project-launch-index">
+                          0{index + 1} / GUIDED BUILD
+                        </span>
+                        <span className="project-launch-symbol">
+                          <FolderCode size={26} />
+                        </span>
+                        <strong>{project.title}</strong>
+                        <span>{project.description}</span>
+                        <small>
+                          HTML · CSS · JAVASCRIPT <ArrowRight size={16} />
+                        </small>
+                      </button>
+                    ))}
+                  </div>
+                </section>
               )}
               <footer>
                 <span>
@@ -1077,6 +1152,11 @@ export default function LearningApp() {
               </li>
               <li>
                 Head to Coding lab to write JavaScript and run real tests.
+              </li>
+              <li>
+                Build a portfolio, task tracker, or sample-data weather
+                dashboard in Guided projects. Edit HTML, CSS, and JavaScript,
+                run the preview, and check your work.
               </li>
               <li>
                 Choose your atmosphere in Appearance. Five themes, all yours.

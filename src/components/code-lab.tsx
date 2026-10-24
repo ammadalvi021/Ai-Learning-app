@@ -10,10 +10,12 @@ import {
   LoaderCircle,
   Play,
   RotateCcw,
+  Search,
   Terminal,
   XCircle,
 } from "lucide-react";
 import { challenges, type CodingChallenge } from "@/lib/challenges";
+import CodeEditor from "./code-editor";
 import { runChallenge, type CodeRunResult } from "@/lib/code-runner";
 
 type LabProgress = {
@@ -121,7 +123,20 @@ export default function CodeLab() {
   const [resetConfirmation, setResetConfirmation] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const [difficulty, setDifficulty] = useState("all");
+  const categories = [...new Set(challenges.map((item) => item.category))];
+  const visibleChallenges = challenges.filter((item) => {
+    const text =
+      `${item.title} ${item.concept} ${item.description}`.toLowerCase();
+    return (
+      text.includes(query.trim().toLowerCase()) &&
+      (category === "all" || item.category === category) &&
+      (difficulty === "all" || item.difficulty === difficulty)
+    );
+  });
   const challenge =
     challenges.find((item) => item.id === activeId) ?? challenges[0];
   const code = progress.drafts[challenge.id] ?? challenge.starterCode;
@@ -187,7 +202,11 @@ export default function CodeLab() {
   function resetCode() {
     changeCode(challenge.starterCode);
     setResetConfirmation(false);
-    editorRef.current?.focus();
+    requestAnimationFrame(() =>
+      editorRef.current
+        ?.querySelector<HTMLElement>('[role="textbox"]')
+        ?.focus(),
+    );
   }
 
   return (
@@ -197,7 +216,8 @@ export default function CodeLab() {
           <span className="eyebrow">PRACTICE / BUILD / REPEAT</span>
           <h1 id="lab-title">Coding lab</h1>
           <p>
-            Write real JavaScript. Run your solution. Learn from the result.
+            Twenty challenges. A real editor. Build your skills one working
+            solution at a time.
           </p>
         </div>
         <span className="lab-tag">
@@ -218,8 +238,45 @@ export default function CodeLab() {
               {progress.completed.length} / {challenges.length} solved
             </span>
           </div>
+          <div className="lab-filters">
+            <label className="lab-search">
+              <Search size={14} />
+              <input
+                aria-label="Search challenges"
+                placeholder="Find a challenge…"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+            </label>
+            <div className="lab-filter-row">
+              <select
+                aria-label="Challenge category"
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
+              >
+                <option value="all">All topics</option>
+                {categories.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="Challenge difficulty"
+                value={difficulty}
+                onChange={(event) => setDifficulty(event.target.value)}
+              >
+                <option value="all">All levels</option>
+                <option value="Starter">Starter</option>
+                <option value="Intermediate">Intermediate</option>
+              </select>
+            </div>
+            <p className="lab-result-count">
+              {visibleChallenges.length} of {challenges.length} challenges
+            </p>
+          </div>
           <nav aria-label="Coding challenges">
-            {challenges.map((item, index) => (
+            {visibleChallenges.map((item) => (
               <button
                 className={`lab-challenge-card ${activeId === item.id ? "active" : ""}`}
                 key={item.id}
@@ -230,7 +287,7 @@ export default function CodeLab() {
                   {progress.completed.includes(item.id) ? (
                     <Check size={16} />
                   ) : (
-                    `0${index + 1}`
+                    String(challenges.indexOf(item) + 1).padStart(2, "0")
                   )}
                 </span>
                 <span>
@@ -240,6 +297,21 @@ export default function CodeLab() {
                 <ChevronRight size={15} />
               </button>
             ))}
+            {!visibleChallenges.length && (
+              <div className="lab-empty">
+                <p>No challenges match your filters.</p>
+                <button
+                  className="text-button"
+                  onClick={() => {
+                    setQuery("");
+                    setCategory("all");
+                    setDifficulty("all");
+                  }}
+                >
+                  Show all challenges
+                </button>
+              </div>
+            )}
           </nav>
           <div className="lab-runtime-note">
             <Terminal size={18} />
@@ -306,38 +378,18 @@ export default function CodeLab() {
               </span>
               <span>JavaScript · ES2020+</span>
             </div>
-            <div className="lab-editor-wrap">
-              <div className="lab-line-numbers" aria-hidden="true">
-                {code.split("\n").map((_, index) => (
-                  <span key={index}>{index + 1}</span>
-                ))}
-              </div>
-              <textarea
-                ref={editorRef}
-                className="code-editor"
-                aria-label="Code editor"
-                aria-describedby="editor-help"
+            <div ref={editorRef}>
+              <CodeEditor
+                key={challenge.id}
                 value={code}
-                spellCheck={false}
-                autoCapitalize="off"
-                autoCorrect="off"
-                maxLength={50_000}
+                onChange={changeCode}
                 readOnly={running}
-                onChange={(event) => changeCode(event.target.value)}
-                onKeyDown={(event) => {
-                  if (
-                    (event.ctrlKey || event.metaKey) &&
-                    event.key === "Enter"
-                  ) {
-                    event.preventDefault();
-                    void runTests();
-                  }
-                }}
+                onRun={() => void runTests()}
               />
             </div>
             <div className="lab-editor-footer">
               <span id="editor-help">
-                Ctrl / ⌘ + Enter to run · Tab moves focus
+                Highlighting · autocomplete · syntax diagnostics
               </span>
               <span>
                 {progress.storageUnavailable
