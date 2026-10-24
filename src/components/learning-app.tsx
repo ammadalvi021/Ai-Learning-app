@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowDown,
-  ArrowLeft,
   ArrowRight,
   BookOpen,
   Check,
@@ -11,410 +9,342 @@ import {
   ChevronRight,
   CircleHelp,
   Clock3,
-  Flower2,
-  GraduationCap,
+  Code2,
+  Cpu,
+  Flame,
   LayoutDashboard,
-  Leaf,
-  Lightbulb,
   Menu,
+  Palette,
+  Play,
   Search,
   Sparkles,
-  Sprout,
   Target,
+  Terminal,
   Trophy,
   X,
+  Zap,
 } from "lucide-react";
-import { lessons, type Lesson } from "@/lib/course";
-import {
-  recordQuiz,
-  resetProgress,
-  todayKey,
-  useLearningProgress,
-} from "@/lib/progress";
+import { tracks, type Lesson } from "@/lib/course";
+import { resetProgress, useLearningProgress } from "@/lib/progress";
+import { setTheme, themes, useTheme } from "@/lib/themes";
+import ThemePicker from "./theme-picker";
+import LessonReader from "./lesson-reader";
+import CodeLab from "./code-lab";
 
-type View = "overview" | "lessons" | "progress";
+type View = "overview" | "lessons" | "lab" | "progress" | "appearance";
+const navigation = [
+  { id: "overview", label: "Overview", Icon: LayoutDashboard },
+  { id: "lessons", label: "My learning", Icon: BookOpen },
+  { id: "lab", label: "Coding lab", Icon: Terminal },
+  { id: "progress", label: "My progress", Icon: Trophy },
+  { id: "appearance", label: "Appearance", Icon: Palette },
+] as const;
 
-function BotanicalArt() {
+function HeroVisual({ robot }: { robot: boolean }) {
   return (
-    <svg className="botanical-art" viewBox="0 0 300 260" aria-hidden="true">
-      <circle cx="157" cy="127" r="105" fill="#e3e8bc" />
-      <circle
-        cx="157"
-        cy="127"
-        r="80"
-        fill="none"
-        stroke="#a9bb88"
-        strokeDasharray="3 7"
-      />
-      <path
-        d="M155 225c-5-72 6-119 27-174M159 170c-42-8-64-32-70-57M163 143c37-3 56-22 65-49M157 203c29-3 53-14 67-36"
-        fill="none"
-        stroke="#426d51"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <path d="M164 132c-13-39-6-67 24-86 6 38-1 68-24 86" fill="#234f40" />
-      <path d="M158 173c-42 1-70-21-77-63 40 7 67 25 77 63" fill="#56815c" />
-      <path d="M163 146c7-38 33-57 72-56-13 36-36 56-72 56" fill="#759a69" />
-      <path d="M157 205c17-32 42-45 77-37-18 31-44 43-77 37" fill="#234f40" />
-      <path
-        d="m89 118 57 44m37-105-17 65m58-26-52 43m52 34-57 27"
-        stroke="#b2c496"
-        strokeWidth="1.5"
-      />
-      <path
-        d="m66 64 3-10 3 10 10 3-10 3-3 10-3-10-10-3Zm173 68 2-7 2 7 7 2-7 2-2 7-2-7-7-2Z"
-        fill="#8d9f60"
-      />
-      <circle cx="119" cy="48" r="4" fill="#c0a66f" />
-      <circle cx="247" cy="211" r="3" fill="#9aaf79" />
-      <path
-        d="M124 230h63"
-        stroke="#779367"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function LessonReader({
-  lesson,
-  completed,
-  storageUnavailable,
-  onClose,
-}: {
-  lesson: Lesson;
-  completed: boolean;
-  storageUnavailable: boolean;
-  onClose: () => void;
-}) {
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [submitted, setSubmitted] = useState(false);
-  const quizRef = useRef<HTMLDivElement>(null);
-  const quizHeadingRef = useRef<HTMLHeadingElement>(null);
-  const resultRef = useRef<HTMLDivElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
-  const score = Math.round(
-    (lesson.quiz.filter((q) => answers[q.id] === q.correctIndex).length /
-      lesson.quiz.length) *
-      100,
-  );
-  const allAnswered = lesson.quiz.every((q) => answers[q.id] !== undefined);
-
-  useEffect(() => {
-    headingRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    if (submitted) resultRef.current?.focus();
-  }, [submitted]);
-
-  function submitQuiz(event: React.FormEvent) {
-    event.preventDefault();
-    if (!allAnswered) return;
-    setSubmitted(true);
-    recordQuiz(lesson.id, score);
-  }
-
-  return (
-    <article className="reader">
-      <button className="text-button back-button" onClick={onClose}>
-        <ArrowLeft size={17} /> Back to learning
-      </button>
-      <div className="eyebrow">
-        AI FOUNDATIONS <span> / </span> LESSON{" "}
-        {String(lesson.number).padStart(2, "0")}
-      </div>
-      <h1 ref={headingRef} tabIndex={-1}>
-        {lesson.title}
-      </h1>
-      <p className="reader-summary">{lesson.summary}</p>
-      <div className="reader-meta">
-        <span>
-          <Clock3 size={15} /> {lesson.duration} min read
-        </span>
-        <span>
-          <BookOpen size={15} /> Beginner friendly
-        </span>
-        {completed && (
-          <span className="green-text">
-            <CheckCircle2 size={15} /> Completed
-          </span>
-        )}
-      </div>
-      <div className="reader-body">
-        {lesson.sections.map((section) => (
-          <section key={section.heading}>
-            <h2>{section.heading}</h2>
-            {section.paragraphs.map((paragraph, i) => (
-              <p key={i}>{paragraph}</p>
-            ))}
-            {section.example && (
-              <aside className="example">
-                <Lightbulb size={21} />
-                <div>
-                  <strong>Try this idea</strong>
-                  <p>{section.example}</p>
-                </div>
-              </aside>
-            )}
-          </section>
-        ))}
-        <aside className="takeaway">
-          <Sprout size={23} />
-          <div>
-            <strong>The seed to take with you</strong>
-            <p>{lesson.takeaway}</p>
+    <div
+      className={`hero-visual ${robot ? "robot-visual" : ""}`}
+      aria-hidden="true"
+    >
+      <div className="orbit orbit-one" />
+      <div className="orbit orbit-two" />
+      <div className="orbit-node" />
+      {robot ? (
+        <svg className="robot-head" viewBox="0 0 280 260">
+          <defs>
+            <linearGradient id="metal" x2="1" y2="1">
+              <stop stopColor="#b7d4dc" />
+              <stop offset=".4" stopColor="#283e50" />
+              <stop offset=".6" stopColor="#7699a9" />
+              <stop offset="1" stopColor="#172634" />
+            </linearGradient>
+          </defs>
+          <path
+            d="m70 65 30-24h80l30 24 12 115-43 35h-77l-44-35Z"
+            fill="url(#metal)"
+            stroke="currentColor"
+            strokeWidth="1.5"
+          />
+          <path
+            d="m85 90 110-1 8 62-25 15h-75l-25-15Z"
+            fill="#07141e"
+            stroke="#89b8cb"
+          />
+          <rect
+            x="95"
+            y="110"
+            width="29"
+            height="8"
+            rx="3"
+            fill="currentColor"
+          />
+          <rect
+            x="156"
+            y="110"
+            width="29"
+            height="8"
+            rx="3"
+            fill="currentColor"
+          />
+          <path
+            d="m113 145 27 6 27-6M140 41V24M65 99H47v50h17m152-50h17v50h-17M112 191h56"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <circle cx="140" cy="21" r="6" fill="currentColor" />
+          <path
+            d="M97 215v21h86v-21"
+            fill="url(#metal)"
+            stroke="currentColor"
+          />
+        </svg>
+      ) : (
+        <div className="floating-editor">
+          <div className="editor-chrome">
+            <span className="window-dots">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span>your-next-chapter.js</span>
+            <Code2 size={13} />
           </div>
-        </aside>
-        <button
-          className="primary-button"
-          onClick={() => {
-            quizHeadingRef.current?.focus({ preventScroll: true });
-            quizRef.current?.scrollIntoView({
-              behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
-                .matches
-                ? "auto"
-                : "smooth",
-              block: "start",
-            });
-          }}
-        >
-          Check your understanding <ArrowDown size={16} />
-        </button>
-        <div className="quiz" ref={quizRef}>
-          <div className="section-kicker">
-            <Sparkles size={15} /> A LITTLE PRACTICE
-          </div>
-          <h2 ref={quizHeadingRef} tabIndex={-1}>
-            Let’s make it stick.
-          </h2>
-          <p>
-            Answer both questions correctly to complete this lesson. You can try
-            as many times as you like.
-          </p>
-          <form onSubmit={submitQuiz}>
-            {lesson.quiz.map((question, index) => (
-              <fieldset key={question.id} disabled={submitted}>
-                <legend>
-                  <span>{index + 1}.</span> {question.question}
-                </legend>
-                <div className="quiz-options">
-                  {question.options.map((option, optionIndex) => (
-                    <label
-                      key={option}
-                      className={`quiz-option ${answers[question.id] === optionIndex ? "selected" : ""} ${submitted && optionIndex === question.correctIndex ? "correct" : ""} ${submitted && answers[question.id] === optionIndex && optionIndex !== question.correctIndex ? "incorrect" : ""}`}
-                    >
-                      <input
-                        type="radio"
-                        name={question.id}
-                        value={optionIndex}
-                        checked={answers[question.id] === optionIndex}
-                        onChange={() =>
-                          setAnswers({ ...answers, [question.id]: optionIndex })
-                        }
-                      />
-                      <span>{option}</span>
-                      {submitted && optionIndex === question.correctIndex && (
-                        <Check size={18} />
-                      )}
-                    </label>
-                  ))}
-                </div>
-                {submitted && (
-                  <p className="answer-explanation">{question.explanation}</p>
-                )}
-              </fieldset>
-            ))}
-            {!submitted && (
-              <>
-                <button
-                  className="primary-button"
-                  type="submit"
-                  disabled={!allAnswered}
-                >
-                  Check my answers <ArrowRight size={16} />
-                </button>
-                {!allAnswered && (
-                  <p className="quiz-hint">
-                    Choose one answer for each question.
-                  </p>
-                )}
-              </>
-            )}
-          </form>
-          {submitted && (
-            <div
-              ref={resultRef}
-              className={`quiz-result ${score === 100 ? "passed" : ""}`}
-              role="status"
-              tabIndex={-1}
-            >
-              {score === 100 ? <Trophy size={25} /> : <Lightbulb size={25} />}
-              <div>
-                <strong>
-                  {score === 100
-                    ? "A little wiser. Lesson complete!"
-                    : `${score}% — you’re learning. Give it another go.`}
-                </strong>
-                <p>
-                  {score === 100
-                    ? storageUnavailable
-                      ? "Your progress is temporary and available for this page only. Browser storage is unavailable."
-                      : "Your progress has been saved in this browser."
-                    : "Read the explanations above, then try again."}
-                </p>
-              </div>
-              {score !== 100 && (
-                <button
-                  className="secondary-button"
-                  onClick={() => {
-                    setSubmitted(false);
-                    setAnswers({});
-                    requestAnimationFrame(() =>
-                      quizHeadingRef.current?.focus(),
-                    );
-                  }}
-                >
-                  Try again
-                </button>
-              )}
+          <div className="editor-code">
+            <div>
+              <span>01</span>
+              <code>
+                <em>const</em> developer = {"{"}
+              </code>
             </div>
-          )}
-          {submitted && score === 100 && (
-            <button className="primary-button" onClick={onClose}>
-              Back to my learning <ArrowRight size={16} />
-            </button>
-          )}
+            <div>
+              <span>02</span>
+              <code>
+                &nbsp; curiosity: <b>true</b>,
+              </code>
+            </div>
+            <div>
+              <span>03</span>
+              <code>
+                &nbsp; potential: <b>Infinity</b>
+              </code>
+            </div>
+            <div>
+              <span>04</span>
+              <code>{"}"};</code>
+            </div>
+            <div className="code-spacer" />
+            <div>
+              <span>05</span>
+              <code>
+                <em>while</em> (developer.curiosity) {"{"}
+              </code>
+            </div>
+            <div>
+              <span>06</span>
+              <code>
+                &nbsp; <strong>learn</strong>();
+              </code>
+            </div>
+            <div>
+              <span>07</span>
+              <code>
+                &nbsp; <strong>build</strong>();
+              </code>
+            </div>
+            <div>
+              <span>08</span>
+              <code>
+                &nbsp; <strong>repeat</strong>();
+              </code>
+            </div>
+            <div>
+              <span>09</span>
+              <code>{"}"}</code>
+            </div>
+          </div>
+          <div className="editor-status">
+            <span>
+              <span className="status-dot" /> Ready to build
+            </span>
+            <span>JavaScript</span>
+          </div>
         </div>
+      )}
+      <div className="floating-chip">
+        <Zap size={14} /> YOUR NEXT LEVEL STARTS HERE
       </div>
-    </article>
+    </div>
   );
 }
 
 export default function LearningApp() {
   const progress = useLearningProgress();
+  const { theme } = useTheme();
   const [view, setView] = useState<View>("overview");
+  const [trackId, setTrackId] = useState("javascript");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(null);
   const [mobileMenu, setMobileMenu] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [resetOpen, setResetOpen] = useState(false);
+  const [dialog, setDialog] = useState<"help" | "reset" | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
+  const track = tracks.find((t) => t.id === trackId) ?? tracks[0];
+  const lessons = track.lessons;
+  const completed = lessons.filter((l) => progress.completed.includes(l.id));
   const nextLesson =
     lessons.find((l) => !progress.completed.includes(l.id)) ?? lessons[0];
-  const percentage = Math.round(
-    (progress.completed.length / lessons.length) * 100,
+  const percentage = Math.round((completed.length / lessons.length) * 100);
+  const scores = lessons.flatMap((l) =>
+    progress.scores[l.id] === undefined ? [] : [progress.scores[l.id]],
   );
-  const learningDays = new Set(Object.values(progress.completionDates)).size;
-  const scoreValues = Object.values(progress.scores);
-  const accuracy = scoreValues.length
-    ? Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length)
+  const accuracy = scores.length
+    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
     : null;
-  const todayComplete = Object.values(progress.completionDates).includes(
-    todayKey(),
+  const learningDays = new Set(Object.values(progress.completionDates)).size;
+  const selectedTheme = themes.find((t) => t.id === theme)!;
+  const visibleLessons = lessons.filter(
+    (l) =>
+      `${l.title} ${l.summary} ${l.category}`
+        .toLowerCase()
+        .includes(query.toLowerCase().trim()) &&
+      (filter === "all" ||
+        (filter === "completed"
+          ? progress.completed.includes(l.id)
+          : !progress.completed.includes(l.id))),
   );
-  const visibleLessons = lessons.filter((lesson) => {
-    const matches = `${lesson.title} ${lesson.summary} ${lesson.category}`
-      .toLowerCase()
-      .includes(query.toLowerCase().trim());
-    const complete = progress.completed.includes(lesson.id);
-    return (
-      matches &&
-      (filter === "all" || (filter === "completed" ? complete : !complete))
-    );
-  });
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if ((helpOpen || resetOpen) && dialog && !dialog.open) dialog.showModal();
-    else if (dialog?.open && !helpOpen && !resetOpen) dialog.close();
-  }, [helpOpen, resetOpen]);
+    if (dialog && !dialogRef.current?.open) dialogRef.current?.showModal();
+    if (!dialog && dialogRef.current?.open) dialogRef.current.close();
+  }, [dialog]);
 
   useEffect(() => {
     if (!mobileMenu) return;
-
     const sidebar = sidebarRef.current;
-    const media = window.matchMedia("(max-width: 760px)");
-    const previousOverflow = document.body.style.overflow;
+    const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const focusFrame = requestAnimationFrame(() => {
-      sidebar?.querySelector<HTMLButtonElement>("nav button")?.focus();
-    });
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (!media.matches || dialogRef.current?.open) return;
+    const frame = requestAnimationFrame(() =>
+      sidebar?.querySelector<HTMLButtonElement>("nav button")?.focus(),
+    );
+    function keyboard(event: KeyboardEvent) {
+      if (dialogRef.current?.open) return;
       if (event.key === "Escape") {
         event.preventDefault();
         setMobileMenu(false);
         requestAnimationFrame(() => menuTriggerRef.current?.focus());
-        return;
       }
       if (event.key !== "Tab" || !sidebar) return;
-
-      const focusable = Array.from(
+      const buttons = Array.from(
         sidebar.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
+          "button:not([disabled]), a[href]",
         ),
-      ).filter((element) => element.getClientRects().length > 0);
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      ).filter((b) => b.getClientRects().length);
+      const first = buttons[0],
+        last = buttons.at(-1);
       if (!first || !last) return;
-
-      if (!sidebar.contains(document.activeElement)) {
+      if (
+        !sidebar.contains(document.activeElement) ||
+        (!event.shiftKey && document.activeElement === last)
+      ) {
         event.preventDefault();
-        (event.shiftKey ? last : first).focus();
+        first.focus();
       } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
       }
     }
-
-    function onViewportChange() {
+    const media = window.matchMedia("(max-width: 800px)");
+    const resize = () => {
       if (!media.matches) setMobileMenu(false);
-    }
-
-    document.addEventListener("keydown", onKeyDown);
-    media.addEventListener("change", onViewportChange);
+    };
+    media.addEventListener("change", resize);
+    document.addEventListener("keydown", keyboard);
     return () => {
-      cancelAnimationFrame(focusFrame);
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", onKeyDown);
-      media.removeEventListener("change", onViewportChange);
+      cancelAnimationFrame(frame);
+      document.body.style.overflow = previous;
+      document.removeEventListener("keydown", keyboard);
+      media.removeEventListener("change", resize);
     };
   }, [mobileMenu]);
 
-  function closeMobileMenu() {
-    setMobileMenu(false);
-    requestAnimationFrame(() => menuTriggerRef.current?.focus());
-  }
+  useEffect(() => {
+    function shortcut(event: KeyboardEvent) {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        event.key.toLowerCase() === "k" &&
+        !dialogRef.current?.open
+      ) {
+        event.preventDefault();
+        setView("lessons");
+        setActiveLesson(null);
+        setMobileMenu(false);
+        requestAnimationFrame(() =>
+          document.getElementById("lesson-search")?.focus(),
+        );
+      }
+    }
+    document.addEventListener("keydown", shortcut);
+    return () => document.removeEventListener("keydown", shortcut);
+  }, []);
 
   function navigate(next: View) {
     setView(next);
     setActiveLesson(null);
-    setMobileMenu(false);
     setQuery("");
     setFilter("all");
+    setMobileMenu(false);
     window.scrollTo({ top: 0 });
     requestAnimationFrame(() =>
       mainRef.current?.focus({ preventScroll: true }),
     );
   }
+  function closeMenu() {
+    setMobileMenu(false);
+    requestAnimationFrame(() => menuTriggerRef.current?.focus());
+  }
   function openLesson(lesson: Lesson) {
     setActiveLesson(lesson);
     window.scrollTo({ top: 0 });
   }
+  function selectTrack(id: string) {
+    setTrackId(id);
+    setQuery("");
+    setFilter("all");
+  }
 
   return (
     <div className="app-shell">
+      <div className="ambient" aria-hidden="true" />
+      {theme === "matrix" && (
+        <div className="matrix-rain" aria-hidden="true">
+          {Array.from({ length: 12 }, (_, i) => (
+            <span
+              key={i}
+              style={{ left: `${i * 8.5}%`, animationDelay: `-${i * 1.7}s` }}
+            >
+              01アイウエオ110101
+              <br />
+              function explore()
+              <br />
+              01010011
+              <br />
+              コード101
+              <br />
+              const future = true;
+              <br />
+              11001001
+              <br />
+              システム01
+              <br />
+              10110010
+            </span>
+          ))}
+        </div>
+      )}
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -422,7 +352,7 @@ export default function LearningApp() {
         <button
           className="sidebar-overlay"
           aria-label="Close navigation"
-          onClick={closeMobileMenu}
+          onClick={closeMenu}
         />
       )}
       <aside
@@ -435,7 +365,7 @@ export default function LearningApp() {
           <button
             className="mobile-close"
             aria-label="Close navigation menu"
-            onClick={closeMobileMenu}
+            onClick={closeMenu}
           >
             <X size={21} />
           </button>
@@ -446,69 +376,92 @@ export default function LearningApp() {
           aria-label="Bloom home"
         >
           <span className="brand-symbol">
-            <Sprout size={24} />
+            <Code2 size={24} />
           </span>
-          bloom<span className="brand-dot">.</span>
+          <span>
+            bloom<span className="brand-dot">_</span>
+            <small>DEVELOPER WORKSPACE</small>
+          </span>
         </button>
-        <p className="sidebar-caption">A LITTLE LEARNING, EVERY DAY</p>
-        <div className="nav-label">YOUR SPACE</div>
+        <div className="workspace-switch">
+          <span className="workspace-avatar">B</span>
+          <div>
+            <strong>Personal workspace</strong>
+            <small>Learn. Build. Level up.</small>
+          </div>
+          <span className="version-badge">V2</span>
+        </div>
+        <div className="nav-label">WORKSPACE</div>
         <nav aria-label="Main navigation">
-          {(
-            [
-              { id: "overview", label: "Overview", Icon: LayoutDashboard },
-              { id: "lessons", label: "My learning", Icon: BookOpen },
-              { id: "progress", label: "My progress", Icon: Trophy },
-            ] as const
-          ).map(({ id, label, Icon }) => (
+          {navigation.map(({ id, label, Icon }) => (
             <button
               key={id}
               className={`nav-item ${view === id ? "active" : ""}`}
+              aria-label={label}
               aria-current={view === id ? "page" : undefined}
               onClick={() => navigate(id)}
             >
-              <Icon size={19} />
+              <Icon size={18} />
               {label}
-              {id === "lessons" && (
-                <span className="nav-count">{lessons.length}</span>
-              )}
+              {id === "lab" && <span className="new-badge">NEW</span>}
+              {view === id && <span className="nav-active-dot" />}
             </button>
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="growth-note">
-            <Flower2 size={32} strokeWidth={1.3} />
-            <h3>
-              Small steps.
-              <br />
-              Brighter possibilities.
-            </h3>
-            <p>
-              You don’t have to know it all.
-              <br />
-              You just have to begin.
-            </p>
-            <span className="tiny-leaf">
-              <Leaf size={15} /> GROW AT YOUR OWN PACE
-            </span>
+          <div className="sidebar-progress">
+            <div>
+              <span>YOUR MOMENTUM</span>
+              <Flame size={15} />
+            </div>
+            <strong>
+              {progress.completed.length}
+              <small> / 12 lessons complete</small>
+            </strong>
+            <div className="progress-track">
+              <span
+                style={{ width: `${(progress.completed.length / 12) * 100}%` }}
+              />
+            </div>
+            <p>Progress is built one commit at a time.</p>
+          </div>
+          <div className="theme-mini">
+            <span>INTERFACE</span>
+            <div>
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  title={t.name}
+                  aria-label={`Use ${t.name} theme`}
+                  aria-pressed={theme === t.id}
+                  style={{ background: t.color }}
+                  onClick={() => setTheme(t.id)}
+                >
+                  {theme === t.id && <Check size={11} />}
+                </button>
+              ))}
+            </div>
           </div>
           <button
             className="nav-item help-button"
-            onClick={() => setHelpOpen(true)}
+            onClick={() => setDialog("help")}
           >
-            <CircleHelp size={18} /> How Bloom works
+            <CircleHelp size={17} />
+            How Bloom works
+            <ChevronRight size={14} />
           </button>
           <div className="profile">
             <span className="avatar">
-              <Sprout size={20} />
+              <Terminal size={17} />
             </span>
             <div>
-              <strong>Your learning space</strong>
-              <span>Curiosity looks good on you</span>
+              <strong>Developer mode</strong>
+              <span>Always a work in progress.</span>
             </div>
+            <span className="status-dot" />
           </div>
         </div>
       </aside>
-
       <div className="workspace">
         <header className="topbar">
           <div className="breadcrumb">
@@ -518,134 +471,206 @@ export default function LearningApp() {
               aria-label="Open navigation"
               aria-expanded={mobileMenu}
               aria-controls="main-navigation"
-              onClick={() => setMobileMenu(!mobileMenu)}
+              onClick={() => (mobileMenu ? closeMenu() : setMobileMenu(true))}
             >
               <Menu size={21} />
             </button>
-            <span>My workspace</span>
+            <span>Workspace</span>
             <ChevronRight size={13} />
             <strong>
               {activeLesson
                 ? "Lesson"
-                : view === "overview"
-                  ? "Overview"
-                  : view === "lessons"
-                    ? "My learning"
-                    : "My progress"}
+                : navigation.find((n) => n.id === view)?.label}
             </strong>
           </div>
-          <span className="topbar-note">
-            <span className="status-dot" /> A good day to grow
-          </span>
+          <div className="topbar-actions">
+            <button
+              className="header-search"
+              onClick={() => {
+                navigate("lessons");
+                requestAnimationFrame(() =>
+                  document.getElementById("lesson-search")?.focus(),
+                );
+              }}
+              aria-label="Find a lesson"
+            >
+              <Search size={15} />
+              <span>Find a lesson</span>
+              <kbd>Ctrl K</kbd>
+            </button>
+            <button
+              className="theme-trigger"
+              onClick={() => navigate("appearance")}
+              aria-label="Customize theme"
+            >
+              <Palette size={15} />
+              <span>{selectedTheme.name}</span>
+            </button>
+            <span className="header-avatar">&lt;/&gt;</span>
+          </div>
         </header>
         <main id="main-content" ref={mainRef} tabIndex={-1} inert={mobileMenu}>
           {progress.storageUnavailable && (
             <p className="storage-warning" role="status">
-              Browser storage is unavailable. New progress may be lost when you
-              reload, and resets may not clear progress already saved in this
-              browser.
+              Browser storage is unavailable. Progress is temporary for this
+              page. Saved changes or resets may not persist after a reload.
             </p>
           )}
           {activeLesson ? (
             <LessonReader
               key={activeLesson.id}
               lesson={activeLesson}
+              courseTitle={track.title}
               completed={progress.completed.includes(activeLesson.id)}
               storageUnavailable={progress.storageUnavailable}
               onClose={() => {
                 setActiveLesson(null);
                 window.scrollTo({ top: 0 });
-                mainRef.current?.focus();
+                requestAnimationFrame(() => mainRef.current?.focus());
               }}
             />
+          ) : view === "lab" ? (
+            <CodeLab />
+          ) : view === "appearance" ? (
+            <>
+              <div className="page-heading">
+                <div>
+                  <div className="eyebrow">
+                    <Palette size={13} /> PERSONALIZE YOUR ENVIRONMENT
+                  </div>
+                  <h1>
+                    Your workspace. <span>Your frequency.</span>
+                  </h1>
+                  <p>
+                    Five interfaces. One mission. Choose the atmosphere that
+                    keeps you in flow.
+                  </p>
+                </div>
+                <span className="page-badge">APPEARANCE / 05</span>
+              </div>
+              <ThemePicker />
+              <section className="appearance-note glass-panel">
+                <Cpu size={26} />
+                <div>
+                  <h2>Different skin. Same potential.</h2>
+                  <p>
+                    Your lessons, quiz progress, and code drafts stay with you
+                    when you switch themes. Matrix includes digital rain; Robot
+                    brings a metallic cockpit. Animations respect your device’s
+                    reduced-motion preference.
+                  </p>
+                </div>
+              </section>
+            </>
           ) : (
             <>
               <div className="page-heading">
                 <div>
                   <div className="eyebrow">
-                    <span className="small-line" /> YOUR NEXT CHAPTER STARTS
-                    HERE
+                    <span className="status-dot" />{" "}
+                    {view === "progress"
+                      ? "YOUR DEVELOPER JOURNEY"
+                      : "SYSTEM ONLINE. CURIOSITY ACTIVATED."}
                   </div>
                   <h1>
-                    {view === "overview"
-                      ? "A little curiosity. A lot of possibility."
-                      : view === "lessons"
-                        ? "Make room for something new."
-                        : "Look how far you’ve grown."}
+                    {view === "overview" ? (
+                      <>
+                        Less scrolling. <span>More building.</span>
+                      </>
+                    ) : view === "lessons" ? (
+                      <>
+                        Your next skill <span>starts here.</span>
+                      </>
+                    ) : (
+                      <>
+                        Every step <span>compounds.</span>
+                      </>
+                    )}
                   </h1>
                   <p>
                     {view === "overview"
-                      ? "Build your confidence with AI, one small discovery at a time."
+                      ? "Turn curiosity into capability. Your developer journey starts with the next line."
                       : view === "lessons"
-                        ? "Six bite-sized lessons. Practical ideas. Your own pace."
-                        : "Every lesson is a step forward. Here’s your journey so far."}
+                        ? "Choose a track. Learn the concepts. Put them to work."
+                        : "Real learning. Real progress. All of it earned by you."}
                   </p>
                 </div>
-                <span className="chapter-badge">
-                  <Leaf size={15} /> YOUR PERSONAL LEARNING SPACE
+                <span className="page-badge">
+                  <Terminal size={13} /> THE DEVELOPER EDITION
                 </span>
               </div>
-
               {view === "overview" && (
-                <section className="hero" aria-labelledby="hero-title">
+                <section
+                  className="hero glass-panel"
+                  aria-labelledby="hero-title"
+                >
+                  <div className="hero-grid" />
                   <div className="hero-content">
                     <span className="course-pill">
-                      <Sparkles size={13} /> A FRESH PERSPECTIVE
+                      <span className="status-dot" /> LEARN → BUILD → REPEAT
                     </span>
                     <h2 id="hero-title">
-                      The future feels better
+                      Don’t just learn code.
                       <br />
-                      when you understand it.
+                      <span>Think like a developer.</span>
                     </h2>
                     <p>
-                      Get to know AI beyond the buzzwords.
+                      Understand the fundamentals. Experiment with ideas.
                       <br />
-                      Simple lessons for a world that keeps changing.
+                      Build the confidence to create something of your own.
                     </p>
-                    <button
-                      className="primary-button"
-                      onClick={() => openLesson(nextLesson)}
-                    >
-                      {percentage === 100
-                        ? "Revisit your learning"
-                        : percentage > 0
-                          ? "Continue learning"
-                          : "Start your first lesson"}
-                      <ArrowRight size={17} />
-                    </button>
+                    <div className="hero-buttons">
+                      <button
+                        className="primary-button"
+                        onClick={() => openLesson(nextLesson)}
+                      >
+                        <Play size={14} fill="currentColor" />
+                        {percentage === 100
+                          ? "Revisit your learning"
+                          : percentage > 0
+                            ? "Continue learning"
+                            : "Start your first lesson"}
+                        <ArrowRight size={15} />
+                      </button>
+                      <button
+                        className="hero-lab-button"
+                        onClick={() => navigate("lab")}
+                      >
+                        <Terminal size={15} />
+                        Open coding lab
+                      </button>
+                    </div>
                     <div className="hero-meta">
                       <span>
-                        <BookOpen size={13} /> 6 short lessons
+                        <CheckCircle2 size={13} /> Beginner friendly
                       </span>
-                      <span className="meta-dot">·</span>
                       <span>
                         <Clock3 size={13} /> At your own pace
                       </span>
                     </div>
                   </div>
-                  <BotanicalArt />
-                  <span className="hero-side-note">ROOTED IN CURIOSITY</span>
+                  <HeroVisual robot={theme === "robot"} />
+                  <span className="hero-coordinate">
+                    BUILD_VERSION 02.00 // NO LIMITS TO CURIOSITY
+                  </span>
                 </section>
               )}
-
               <section className="stats" aria-label="Your learning statistics">
-                <div className="stat-card">
-                  <span className="stat-icon sage">
-                    <BookOpen size={19} />
+                <div className="stat-card glass-panel">
+                  <span className="stat-icon">
+                    <BookOpen size={20} />
                   </span>
                   <div>
                     <span className="stat-label">Lessons completed</span>
                     <strong>
-                      {progress.completed.length}
+                      {completed.length}
                       <small> / {lessons.length}</small>
                     </strong>
                   </div>
-                  <span className="stat-detail">
-                    {percentage}% of your path
-                  </span>
+                  <span className="stat-detail">{percentage}% OF TRACK</span>
                 </div>
-                <div className="stat-card">
-                  <span className="stat-icon sand">
+                <div className="stat-card glass-panel">
+                  <span className="stat-icon">
                     <Target size={20} />
                   </span>
                   <div>
@@ -654,13 +679,13 @@ export default function LearningApp() {
                   </div>
                   <span className="stat-detail">
                     {accuracy === null
-                      ? "Your first win awaits"
-                      : "Practice makes progress"}
+                      ? "READY WHEN YOU ARE"
+                      : "KEEP THE MOMENTUM"}
                   </span>
                 </div>
-                <div className="stat-card">
-                  <span className="stat-icon peach">
-                    <Sprout size={21} />
+                <div className="stat-card glass-panel">
+                  <span className="stat-icon">
+                    <Zap size={20} />
                   </span>
                   <div>
                     <span className="stat-label">Learning days</span>
@@ -669,24 +694,66 @@ export default function LearningApp() {
                       <small> {learningDays === 1 ? "day" : "days"}</small>
                     </strong>
                   </div>
-                  <span className="stat-detail">A habit worth growing</span>
+                  <span className="stat-detail">CONSISTENCY COMPOUNDS</span>
                 </div>
               </section>
-
-              {view === "progress" ? (
-                <section className="progress-page">
-                  <div className="progress-overview">
-                    <span className="section-kicker">
-                      YOUR GROWING KNOWLEDGE
+              <div className="section-heading">
+                <div>
+                  <span className="section-kicker">SELECT YOUR MISSION</span>
+                  <h2>
+                    {view === "progress"
+                      ? "Track your progress"
+                      : "Your learning paths"}
+                  </h2>
+                </div>
+                <span className="mono-muted">02 TRACKS AVAILABLE</span>
+              </div>
+              <div
+                className="track-selector"
+                role="group"
+                aria-label="Learning track"
+              >
+                {tracks.map((t) => (
+                  <button
+                    key={t.id}
+                    className={`track-card ${trackId === t.id ? "selected" : ""}`}
+                    aria-pressed={trackId === t.id}
+                    onClick={() => selectTrack(t.id)}
+                  >
+                    <span
+                      className={`track-logo ${t.id === "ai" ? "ai-logo" : ""}`}
+                    >
+                      {t.id === "javascript" ? "JS" : <Sparkles size={21} />}
                     </span>
+                    <span>
+                      <strong>{t.title}</strong>
+                      <small>
+                        {t.lessons.length} lessons <span>·</span>{" "}
+                        {t.id === "javascript"
+                          ? "Learn the language of the web"
+                          : "Understand the intelligence behind it"}
+                      </small>
+                    </span>
+                    <span className="track-radio">
+                      {trackId === t.id && <span />}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {view === "progress" ? (
+                <section className="progress-page glass-panel">
+                  <div className="progress-overview">
+                    <div className="section-kicker">
+                      {track.title.toUpperCase()}
+                    </div>
                     <h2>
                       {percentage === 100
-                        ? "You’ve completed AI foundations!"
+                        ? "Track complete. Next level unlocked."
                         : `${percentage}% of your journey, and counting.`}
                     </h2>
                     <p>
-                      Pass a lesson’s quiz to grow your progress. All six
-                      lessons are yours to explore.
+                      Pass each lesson’s quiz to complete the track. Every
+                      checkpoint counts.
                     </p>
                     <div
                       className="progress-track"
@@ -699,9 +766,9 @@ export default function LearningApp() {
                       <span style={{ width: `${percentage}%` }} />
                     </div>
                     <div className="progress-caption">
-                      <span>{progress.completed.length} lessons completed</span>
+                      <span>{completed.length} lessons completed</span>
                       <span>
-                        {lessons.length - progress.completed.length} to discover
+                        {lessons.length - completed.length} to discover
                       </span>
                     </div>
                   </div>
@@ -713,16 +780,12 @@ export default function LearningApp() {
                         onClick={() => openLesson(l)}
                       >
                         <span
-                          className={
-                            progress.completed.includes(l.id)
-                              ? "milestone-dot done"
-                              : "milestone-dot"
-                          }
+                          className={`milestone-dot ${progress.completed.includes(l.id) ? "done" : ""}`}
                         >
                           {progress.completed.includes(l.id) ? (
-                            <Check size={17} />
+                            <Check size={16} />
                           ) : (
-                            l.number
+                            String(l.number).padStart(2, "0")
                           )}
                         </span>
                         <span>
@@ -738,7 +801,7 @@ export default function LearningApp() {
                             Best: {progress.scores[l.id]}%
                           </span>
                         )}
-                        <ChevronRight size={18} />
+                        <ChevronRight size={16} />
                       </button>
                     ))}
                   </div>
@@ -746,7 +809,7 @@ export default function LearningApp() {
                     <p>Progress is saved on this browser and device.</p>
                     <button
                       className="text-button"
-                      onClick={() => setResetOpen(true)}
+                      onClick={() => setDialog("reset")}
                     >
                       Reset my progress
                     </button>
@@ -755,35 +818,14 @@ export default function LearningApp() {
               ) : (
                 <div className="learning-layout">
                   <section
-                    className="lessons-section"
+                    className="lessons-section glass-panel"
                     aria-labelledby="lessons-title"
                   >
-                    <div className="section-heading">
-                      <div>
-                        <span className="section-kicker">
-                          A FOUNDATION FOR WHAT’S NEXT
-                        </span>
-                        <h2 id="lessons-title">
-                          Your learning path
-                          <span className="count-badge">6 lessons</span>
-                        </h2>
-                      </div>
-                      {view === "overview" && (
-                        <button
-                          className="text-button view-all"
-                          onClick={() => navigate("lessons")}
-                        >
-                          View all <ArrowRight size={15} />
-                        </button>
-                      )}
-                    </div>
                     <div className="course-heading">
-                      <span className="course-icon">
-                        <GraduationCap size={22} />
-                      </span>
                       <div>
-                        <h3>AI foundations</h3>
-                        <p>Big ideas, made beautifully simple.</p>
+                        <div className="section-kicker">{track.language}</div>
+                        <h2 id="lessons-title">{track.title}</h2>
+                        <p>{track.description}</p>
                       </div>
                       <span className="level-tag">BEGINNER</span>
                     </div>
@@ -800,8 +842,8 @@ export default function LearningApp() {
                         ].map((f) => (
                           <button
                             key={f.id}
-                            aria-pressed={filter === f.id}
                             className={filter === f.id ? "selected" : ""}
+                            aria-pressed={filter === f.id}
                             onClick={() => setFilter(f.id)}
                           >
                             {f.label}
@@ -811,10 +853,11 @@ export default function LearningApp() {
                       <label className="search-box">
                         <Search size={15} />
                         <input
+                          id="lesson-search"
                           aria-label="Search lessons"
-                          placeholder="Find a lesson…"
+                          placeholder="Search lessons…"
                           value={query}
-                          onChange={(event) => setQuery(event.target.value)}
+                          onChange={(e) => setQuery(e.target.value)}
                         />
                         {query && (
                           <button
@@ -827,44 +870,37 @@ export default function LearningApp() {
                       </label>
                     </div>
                     <div className="lesson-list">
-                      {visibleLessons.map((lesson) => {
-                        const complete = progress.completed.includes(lesson.id);
-                        return (
-                          <button
-                            key={lesson.id}
-                            className={`lesson-row ${complete ? "is-complete" : ""}`}
-                            onClick={() => openLesson(lesson)}
-                          >
-                            <span
-                              className={`lesson-number tone-${(lesson.number - 1) % 3}`}
-                            >
-                              {complete ? (
-                                <Check size={20} />
-                              ) : (
-                                String(lesson.number).padStart(2, "0")
-                              )}
-                            </span>
-                            <span className="lesson-info">
-                              <strong>{lesson.title}</strong>
-                              <span>{lesson.summary}</span>
-                              <small>
-                                <Clock3 size={12} /> {lesson.duration} min{" "}
-                                <span>·</span> {lesson.category}
-                              </small>
-                            </span>
-                            <span className="lesson-action">
-                              {complete ? (
-                                <span className="completed-tag">Completed</span>
-                              ) : (
-                                <span className="lesson-duration">
-                                  {lesson.duration} min
-                                </span>
-                              )}
-                              <ArrowRight size={17} />
-                            </span>
-                          </button>
-                        );
-                      })}
+                      {visibleLessons.map((l) => (
+                        <button
+                          key={l.id}
+                          className={`lesson-row ${progress.completed.includes(l.id) ? "is-complete" : ""}`}
+                          onClick={() => openLesson(l)}
+                        >
+                          <span className="lesson-number">
+                            {progress.completed.includes(l.id) ? (
+                              <Check size={18} />
+                            ) : (
+                              String(l.number).padStart(2, "0")
+                            )}
+                          </span>
+                          <span className="lesson-info">
+                            <strong>{l.title}</strong>
+                            <span>{l.summary}</span>
+                            <small>
+                              <Clock3 size={11} />
+                              {l.duration} min <span>·</span> {l.category}
+                            </small>
+                          </span>
+                          <span className="lesson-action">
+                            {progress.completed.includes(l.id) ? (
+                              <span className="completed-tag">Completed</span>
+                            ) : (
+                              <Play size={14} />
+                            )}
+                            <ArrowRight size={16} />
+                          </span>
+                        </button>
+                      ))}
                       {!visibleLessons.length && (
                         <div className="empty-state">
                           <Search size={28} />
@@ -875,10 +911,10 @@ export default function LearningApp() {
                           </h3>
                           <p>
                             {query
-                              ? "Try another word, like data or prompts."
+                              ? "Try another word, like functions or data."
                               : filter === "completed"
                                 ? "Complete your first lesson to see it here."
-                                : "You’ve explored every lesson. Nice growing!"}
+                                : "You’ve completed this track. Time for your next challenge."}
                           </p>
                           <button
                             className="text-button"
@@ -894,76 +930,77 @@ export default function LearningApp() {
                     </div>
                   </section>
                   <aside className="right-column">
-                    <section className="daily-goal">
-                      <div className="card-label">
-                        <Target size={16} /> YOUR DAILY MOMENT
+                    <section className="lab-promo glass-panel">
+                      <div className="promo-top">
+                        <span className="promo-icon">
+                          <Terminal size={24} />
+                        </span>
+                        <span className="new-badge">NEW IN V2</span>
                       </div>
+                      <span className="section-kicker">
+                        LESS THEORY. MORE KEYSTROKES.
+                      </span>
                       <h3>
-                        A little time.
-                        <br />A lasting difference.
+                        Meet your
+                        <br />
+                        <span>coding playground.</span>
                       </h3>
                       <p>
-                        One lesson today is one more
-                        <br />
-                        idea you’ll carry tomorrow.
+                        Write JavaScript, run real tests, and turn “I get it”
+                        into “I built it.”
                       </p>
-                      <div
-                        className={`goal-circle ${todayComplete ? "goal-complete" : ""}`}
-                      >
+                      <div className="mini-terminal">
+                        <span>$ run your-potential.js</span>
                         <span>
-                          {todayComplete ? (
-                            <Check size={28} />
-                          ) : (
-                            <Sprout size={28} />
-                          )}
+                          <Check size={12} /> 3 challenges ready
                         </span>
-                      </div>
-                      <div className="goal-caption">
-                        <strong>
-                          {todayComplete
-                            ? "Today’s goal, complete."
-                            : "Make space for one lesson"}
-                        </strong>
-                        <span>
-                          {todayComplete
-                            ? "Come back tomorrow. Keep growing."
-                            : "Just 5–8 minutes for yourself"}
-                        </span>
+                        <span className="terminal-cursor">_</span>
                       </div>
                       <button
                         className="secondary-button"
-                        onClick={() => openLesson(nextLesson)}
+                        onClick={() => navigate("lab")}
                       >
-                        {todayComplete
-                          ? "Keep exploring"
-                          : "Let’s make a start"}
-                        <ArrowRight size={15} />
+                        Enter the lab <ArrowRight size={15} />
                       </button>
                     </section>
-                    <section className="gentle-note">
-                      <span>✳</span>
-                      <blockquote>
-                        “The beautiful thing about learning is that nobody can
-                        take it away from you.”
-                      </blockquote>
-                      <p>— B. B. KING</p>
+                    <section className="daily-goal glass-panel">
+                      <span className="section-kicker">
+                        <Flame size={13} /> KEEP THE SPARK ALIVE
+                      </span>
+                      <h3>
+                        One lesson.
+                        <br />
+                        One step forward.
+                      </h3>
+                      <p>
+                        Your future self will thank you for showing up today.
+                      </p>
+                      <button
+                        className="text-button"
+                        onClick={() => openLesson(nextLesson)}
+                      >
+                        Pick up where you left off <ArrowRight size={14} />
+                      </button>
                     </section>
                     <div className="private-note">
-                      <Leaf size={14} />
+                      <Cpu size={14} />
                       <span>
-                        Your pace. Your progress.
+                        No account required.
                         <br />
-                        Saved right here in your browser.
+                        Your progress lives in this browser.
                       </span>
                     </div>
                   </aside>
                 </div>
               )}
               <footer>
-                <span className="footer-brand">
-                  <Sprout size={14} /> A little better, every day.
+                <span>
+                  <Code2 size={14} /> BUILT FOR THE NEXT VERSION OF YOU.
                 </span>
-                <span>Made for curious minds.</span>
+                <span>
+                  LEARN. BUILD. REPEAT.
+                  <span className="status-dot" />
+                </span>
               </footer>
             </>
           )}
@@ -972,43 +1009,40 @@ export default function LearningApp() {
       <dialog
         ref={dialogRef}
         className="info-dialog"
-        aria-labelledby="info-dialog-title"
-        onCancel={() => {
-          setHelpOpen(false);
-          setResetOpen(false);
-        }}
+        aria-labelledby="dialog-title"
+        onCancel={() => setDialog(null)}
         onClick={(event) => {
-          if (event.target === event.currentTarget) {
-            setHelpOpen(false);
-            setResetOpen(false);
-          }
+          if (event.target === event.currentTarget) setDialog(null);
         }}
       >
         <button
           className="dialog-close"
           aria-label="Close dialog"
-          onClick={() => {
-            setHelpOpen(false);
-            setResetOpen(false);
-          }}
+          onClick={() => setDialog(null)}
         >
-          <X size={21} />
+          <X size={20} />
         </button>
-        {resetOpen ? (
+        {dialog === "reset" ? (
           <>
             <span className="dialog-icon">
-              <Sprout size={26} />
+              <Trophy size={25} />
             </span>
-            <h2 id="info-dialog-title">Start with a fresh page?</h2>
+            <h2 id="dialog-title">Reset your learning journey?</h2>
             <p>
-              {progress.storageUnavailable
-                ? "Browser storage is unavailable. This resets progress for the current page, but previously saved progress may return when you reload."
-                : "This clears your quiz scores and completed lessons from this browser. You can’t undo it."}
+              This clears completed lessons and quiz scores across both tracks
+              in this browser. Your theme and code drafts stay as they are. This
+              cannot be undone.
             </p>
+            {progress.storageUnavailable && (
+              <p>
+                Browser storage is unavailable, so previous saved progress may
+                return after a reload.
+              </p>
+            )}
             <div className="dialog-actions">
               <button
                 className="secondary-button"
-                onClick={() => setResetOpen(false)}
+                onClick={() => setDialog(null)}
               >
                 Keep my progress
               </button>
@@ -1016,7 +1050,7 @@ export default function LearningApp() {
                 className="primary-button"
                 onClick={() => {
                   resetProgress();
-                  setResetOpen(false);
+                  setDialog(null);
                 }}
               >
                 Reset progress
@@ -1026,30 +1060,34 @@ export default function LearningApp() {
         ) : (
           <>
             <span className="dialog-icon">
-              <Flower2 size={28} />
+              <Code2 size={25} />
             </span>
-            <h2 id="info-dialog-title">A small space for big ideas.</h2>
+            <h2 id="dialog-title">Your next version starts here.</h2>
             <p>
-              Bloom makes AI approachable through six short lessons and
-              practical quizzes.
+              Bloom combines JavaScript and AI fundamentals with hands-on coding
+              practice.
             </p>
             <ol>
-              <li>Choose any lesson that sparks your curiosity.</li>
-              <li>Read at your own pace, then answer two questions.</li>
               <li>
-                Get both right to complete the lesson. Retakes are always
-                welcome.
+                Pick a learning track and explore short, practical lessons.
+              </li>
+              <li>
+                Pass both quiz questions to complete a lesson. Retry as often as
+                you like.
+              </li>
+              <li>
+                Head to Coding lab to write JavaScript and run real tests.
+              </li>
+              <li>
+                Choose your atmosphere in Appearance. Five themes, all yours.
               </li>
             </ol>
             <p>
-              Your progress stays in this browser. There are no accounts or live
-              AI chat features in this first version.
+              Your progress and code drafts stay in this browser. Accounts,
+              cloud sync, and live AI tutoring are not part of this version.
             </p>
-            <button
-              className="primary-button"
-              onClick={() => setHelpOpen(false)}
-            >
-              Sounds good <ArrowRight size={16} />
+            <button className="primary-button" onClick={() => setDialog(null)}>
+              Let’s build <ArrowRight size={15} />
             </button>
           </>
         )}

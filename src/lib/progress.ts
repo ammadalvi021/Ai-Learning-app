@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { lessons } from "./course";
+import { allLessons } from "./course";
 
 export type Progress = {
   completed: string[];
@@ -12,7 +12,7 @@ export type Progress = {
 
 const STORAGE_KEY = "bloom-learning-progress-v1";
 const CHANGE_EVENT = "bloom-learning-progress-change";
-const lessonIds = new Set(lessons.map((lesson) => lesson.id));
+const lessonIds = new Set(allLessons.map((lesson) => lesson.id));
 const EMPTY_PROGRESS: Progress = {
   completed: [],
   scores: {},

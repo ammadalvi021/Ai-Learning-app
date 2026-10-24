@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { lessons } from "../src/lib/course";
+import { codingLessons as lessons } from "../src/lib/course";
 
 async function completeFirstLesson(page: Page) {
   await page.getByRole("button", { name: "Start your first lesson" }).click();
@@ -60,7 +60,9 @@ test("a completed lesson and quiz score survive a page reload", async ({
     page.getByRole("progressbar", { name: "Course completion" }),
   ).toHaveAttribute("aria-valuenow", "17");
   await expect(
-    page.getByRole("button", { name: /What is AI\?.*Completed.*Best: 100%/ }),
+    page.getByRole("button", {
+      name: /Variables & values.*Completed.*Best: 100%/,
+    }),
   ).toBeVisible();
 });
 
@@ -120,13 +122,13 @@ test("lesson filters and search handle empty results and recover to the full cou
   await page.getByRole("button", { name: "Show all lessons" }).click();
 
   const search = page.getByRole("textbox", { name: "Search lessons" });
-  await search.fill("neural");
+  await search.fill("arrays");
   await expect(
-    page.getByRole("button", { name: /Inside neural networks/ }),
+    page.getByRole("button", { name: /Arrays & iteration/ }),
   ).toBeVisible();
-  await expect(page.getByRole("button", { name: /What is AI\?/ })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole("button", { name: /Variables & values/ }),
+  ).toHaveCount(0);
   await search.fill("no-matching-lesson-9876");
   await expect(
     page.getByRole("heading", { name: "No lessons found" }),
@@ -159,7 +161,7 @@ test("mobile navigation opens, changes views, and keeps content within the viewp
   await expect(
     page.getByRole("heading", {
       level: 1,
-      name: "Make room for something new.",
+      name: /Your next skill\s+starts here\./,
     }),
   ).toBeVisible();
   await expect(menu).toHaveAttribute("aria-expanded", "false");
@@ -173,7 +175,7 @@ test("mobile navigation opens, changes views, and keeps content within the viewp
   }));
   expect(dimensions.content).toBeLessThanOrEqual(dimensions.viewport);
 
-  await page.getByRole("button", { name: /What is AI\?/ }).click();
+  await page.getByRole("button", { name: /Variables & values/ }).click();
   await expect(
     page.getByRole("heading", { level: 1, name: lessons[0].title }),
   ).toBeVisible();
@@ -183,7 +185,7 @@ test("mobile navigation opens, changes views, and keeps content within the viewp
   await expect(
     page.getByRole("heading", {
       level: 1,
-      name: "Make room for something new.",
+      name: /Your next skill\s+starts here\./,
     }),
   ).toBeVisible();
 });

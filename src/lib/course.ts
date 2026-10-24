@@ -17,6 +17,7 @@ export type Lesson = {
     heading: string;
     paragraphs: string[];
     example?: string;
+    snippet?: { language: string; code: string };
   }[];
   takeaway: string;
   quiz: QuizQuestion[];
@@ -418,3 +419,453 @@ export const lessons: Lesson[] = [
     ],
   },
 ];
+
+export const codingLessons: Lesson[] = [
+  {
+    id: "js-variables-values",
+    number: 1,
+    title: "Variables & values",
+    summary:
+      "Give data a name, choose a type, and make your first state change.",
+    duration: 5,
+    category: "JavaScript basics",
+    sections: [
+      {
+        heading: "Names make a program readable",
+        paragraphs: [
+          "A variable connects a name to a value. JavaScript values include numbers, strings, booleans, objects, null, and undefined. Use descriptive names such as completedLessons so another developer can understand the idea without guessing.",
+          "Declare a variable with const when you do not plan to reassign it. Use let when the binding needs a new value later. Both are scoped to the block in which you declare them.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: 'const learner = "Ada";\nlet completedLessons = 0;\ncompletedLessons += 1;\nconsole.log(`${learner} completed ${completedLessons} lesson.`);',
+        },
+      },
+      {
+        heading: "Types describe the value",
+        paragraphs: [
+          'The number 42 and the string "42" are different values. JavaScript determines a value’s type at runtime. The typeof operator helps inspect common primitive types, such as number, string, and boolean.',
+          'An unassigned variable has the value undefined. Use null when you intentionally want to represent no value. JavaScript has a historical quirk: typeof null returns "object", even though null is a primitive value.',
+        ],
+        example:
+          "A quiz score can be a number, a display name a string, and an isComplete flag a boolean. Keeping these meanings clear helps prevent accidental calculations on text.",
+      },
+      {
+        heading: "A constant binding can hold a mutable object",
+        paragraphs: [
+          "const prevents reassignment of the variable itself. It does not freeze an object or array stored in that variable. You may update an object’s properties unless the object is separately protected.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: 'const profile = { name: "Ada", level: 1 };\nprofile.level = 2; // Allowed: the object changes.\n// profile = {}; // Not allowed: the binding would change.',
+        },
+      },
+    ],
+    takeaway:
+      "Start with const, use let when reassignment is necessary, and think about the type and meaning of each value.",
+    quiz: [
+      {
+        id: "js-variables-values-1",
+        question:
+          "Which declaration fits a score that will be reassigned as a player earns points?",
+        options: [
+          "let score = 0;",
+          "const score = 0;",
+          "fixed score = 0;",
+          "score const 0;",
+        ],
+        correctIndex: 0,
+        explanation:
+          "let allows the binding to receive a new value. const prevents reassignment, and the other two examples are not valid declarations.",
+      },
+      {
+        id: "js-variables-values-2",
+        question: "What does const prevent when the value is an object?",
+        options: [
+          "Reading the object’s properties",
+          "Adding any property to the object",
+          "Reassigning the variable to a different value",
+          "Calling a function with the object",
+        ],
+        correctIndex: 2,
+        explanation:
+          "const protects the binding from reassignment. The object’s properties can still change unless additional protections are applied.",
+      },
+    ],
+  },
+  {
+    id: "js-decisions-comparisons",
+    number: 2,
+    title: "Decisions & comparisons",
+    summary:
+      "Turn conditions into useful branches without surprising type conversions.",
+    duration: 5,
+    category: "Control flow",
+    sections: [
+      {
+        heading: "Choose a path with if",
+        paragraphs: [
+          "An if statement runs a block when its condition is truthy. Add else for the other path, or else if to check another condition. Boolean expressions such as score >= 80 make these decisions explicit.",
+          "Keep the most specific conditions before broader ones. Once a matching branch runs, the remaining branches in the same if/else chain are skipped.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: 'const score = 85;\nif (score >= 80) {\n  console.log("Ready for the next challenge");\n} else {\n  console.log("Practice a little more");\n}',
+        },
+      },
+      {
+        heading: "Compare deliberately",
+        paragraphs: [
+          'Strict equality, ===, compares values without converting their types first. For example, 5 === "5" is false. Prefer === and !== when you want a clear comparison, and convert input deliberately when a conversion is needed.',
+          "Use && for conditions that must both hold, || when either can hold, and ! to negate a value’s truthiness. Parentheses help make a complex condition easier to read.",
+        ],
+        example:
+          "A lesson is ready to unlock when the previous lesson is complete AND the learner has access. That condition can be written as previousComplete && hasAccess.",
+      },
+      {
+        heading: "Watch for falsy values",
+        paragraphs: [
+          "false, 0, an empty string, null, undefined, and NaN are falsy. Objects and arrays are truthy, including empty arrays. A fallback written with || replaces every falsy value, which may incorrectly replace a valid zero.",
+          "The nullish coalescing operator, ??, uses its fallback only for null or undefined. Choose the operator that matches the meaning of your data.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: "const points = 0;\nconsole.log(points || 10); // 10: zero is falsy.\nconsole.log(points ?? 10); // 0: zero is not nullish.",
+        },
+      },
+    ],
+    takeaway:
+      "Write explicit conditions, prefer strict equality, and distinguish a missing value from a valid falsy value.",
+    quiz: [
+      {
+        id: "js-decisions-comparisons-1",
+        question: 'What is the result of 5 === "5"?',
+        options: [
+          "true, because the text contains a number",
+          "false, because the types differ",
+          'The string "true"',
+          "A syntax error",
+        ],
+        correctIndex: 1,
+        explanation:
+          "Strict equality does not coerce the operands to a common type. A number and a string are not strictly equal.",
+      },
+      {
+        id: "js-decisions-comparisons-2",
+        question:
+          "Which expression preserves a valid score of 0 and falls back only for null or undefined?",
+        options: ["score || 10", "score && 10", "!score", "score ?? 10"],
+        correctIndex: 3,
+        explanation:
+          "?? falls back only for nullish values. || also replaces zero, empty strings, and other falsy values.",
+      },
+    ],
+  },
+  {
+    id: "js-functions",
+    number: 3,
+    title: "Functions that do one thing",
+    summary:
+      "Package a small idea into reusable code with inputs and a clear result.",
+    duration: 6,
+    category: "Functions",
+    sections: [
+      {
+        heading: "Inputs in, a result out",
+        paragraphs: [
+          "A function groups instructions under a name. Parameters name its inputs, while arguments are the values supplied when it is called. return sends a value back to the caller and ends the current function call.",
+          "Choose a name that explains the job, such as calculateTotal. A small function with one clear responsibility is usually easier to test and reuse than one that also changes the page, saves data, and sends messages.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: "function calculateTotal(price, quantity) {\n  return price * quantity;\n}\n\nconst total = calculateTotal(12, 3);\nconsole.log(total); // 36",
+        },
+      },
+      {
+        heading: "Logging is not returning",
+        paragraphs: [
+          "console.log displays information in a console. It does not send your function’s result to its caller. A function without an explicit return value evaluates to undefined when it finishes.",
+          "Default parameters can give an input a sensible value when the argument is missing or undefined. A default does not automatically replace null or validate every other possible input.",
+        ],
+        example:
+          "A calculateDiscount function should return a number so the checkout can use it. Printing the number is useful for debugging, but the checkout still needs the returned value.",
+      },
+      {
+        heading: "Arrow functions express the same small idea",
+        paragraphs: [
+          "An arrow function is another way to write a function. A single expression can be returned implicitly. When you add curly braces for a block body, use return explicitly if you need a result.",
+          "Arrow functions handle this differently from regular functions, so they are not interchangeable in every situation. For a simple calculation that does not use this, either style can communicate the same input-to-output relationship.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: 'const double = (value) => value * 2;\nconst greet = (name = "developer") => {\n  return `Hello, ${name}!`;\n};\nconsole.log(double(4)); // 8',
+        },
+      },
+    ],
+    takeaway:
+      "Give a function a clear job, make its inputs explicit, and return the value its caller needs.",
+    quiz: [
+      {
+        id: "js-functions-1",
+        question:
+          "A function logs 10 but has no return statement. What value does the caller receive?",
+        options: ["10", 'The string "10"', "undefined", "true"],
+        correctIndex: 2,
+        explanation:
+          "Logging and returning are separate operations. A function that finishes without returning a value returns undefined.",
+      },
+      {
+        id: "js-functions-2",
+        question: "Which arrow function returns the square of its input?",
+        options: [
+          "const square = (n) => n * n;",
+          "const square = (n) => { n * n; };",
+          "const square = n * n;",
+          "const square = (n) => console.log(n);",
+        ],
+        correctIndex: 0,
+        explanation:
+          "An expression-bodied arrow function returns that expression. A block body needs an explicit return to return the calculation.",
+      },
+    ],
+  },
+  {
+    id: "js-arrays-iteration",
+    number: 4,
+    title: "Arrays & iteration",
+    summary:
+      "Transform a collection with map, filter, and a loop you can reason about.",
+    duration: 6,
+    category: "Collections",
+    sections: [
+      {
+        heading: "Keep related values together",
+        paragraphs: [
+          "An array stores an ordered collection. Indexes start at zero, so items[0] reads the first value. The length property tells you how many slots the array contains.",
+          "A for...of loop visits the values of an iterable such as an array. Use it when you want to perform a sequence of actions, accumulate a result, or stop early with break.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: "const scores = [70, 90, 100];\nlet total = 0;\nfor (const score of scores) {\n  total += score;\n}\nconsole.log(total); // 260",
+        },
+      },
+      {
+        heading: "Transform with map and select with filter",
+        paragraphs: [
+          "map calls a function for each present element and builds a new array from its return values. filter builds a new array containing the elements whose callback returns a truthy value. A callback is simply a function passed to another function.",
+          "These methods do not change the source array by themselves. Objects inside the array are still shared references, so a callback that changes an object can still mutate that object.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: 'const scores = [40, 80, 95];\nconst passing = scores.filter((score) => score >= 60);\nconst labels = passing.map((score) => `${score}%`);\nconsole.log(labels); // ["80%", "95%"]',
+        },
+        example:
+          "Filter a lesson list to the completed lessons, then map those lessons to the titles you want to display.",
+      },
+      {
+        heading: "Know when a method mutates",
+        paragraphs: [
+          "push, pop, and sort change an existing array. That can be useful, but it may surprise other code holding the same array. Spread syntax creates a shallow copy when you need a new outer array before making changes.",
+          "Choose map when each input should produce an output. Choose filter when only some inputs should remain. Choose a loop when the flow needs more control, rather than forcing every problem into one method.",
+        ],
+      },
+    ],
+    takeaway:
+      "Use map to transform, filter to select, and pay attention to which operations change shared data.",
+    quiz: [
+      {
+        id: "js-arrays-iteration-1",
+        question:
+          "Which method creates an array containing only values that pass a condition?",
+        options: ["push", "map", "pop", "filter"],
+        correctIndex: 3,
+        explanation:
+          "filter keeps the elements whose callback returns a truthy value. map transforms elements, while push and pop mutate the existing array.",
+      },
+      {
+        id: "js-arrays-iteration-2",
+        question: "What does [2, 3].map((n) => n * 2) produce?",
+        options: ["[2, 3, 2, 3]", "[4, 6]", "10", "[2, 3]"],
+        correctIndex: 1,
+        explanation:
+          "map calls the callback for each element and collects the returned values. Doubling 2 and 3 produces a new array containing 4 and 6.",
+      },
+    ],
+  },
+  {
+    id: "js-objects-data",
+    number: 5,
+    title: "Objects & data",
+    summary:
+      "Model a real thing with properties and update it without losing the original.",
+    duration: 6,
+    category: "Data modeling",
+    sections: [
+      {
+        heading: "Group facts under property names",
+        paragraphs: [
+          "An object groups related values as properties. Dot notation reads a known property name, while bracket notation can use a name stored in a variable. Objects help you represent a learner, a lesson, or the result of a challenge.",
+          "A missing property normally evaluates to undefined. Optional chaining, ?., lets you access a property safely when the value before it might be null or undefined. It does not validate the data’s structure for you.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: 'const lesson = { title: "Objects", minutes: 6 };\nconst key = "title";\nconsole.log(lesson.title); // "Objects"\nconsole.log(lesson[key]); // "Objects"\nconsole.log(lesson.author?.name); // undefined',
+        },
+      },
+      {
+        heading: "Extract and copy with care",
+        paragraphs: [
+          "Destructuring extracts properties into local variables. Object spread copies an object’s own enumerable properties into a new object. Properties written later override earlier properties with the same name.",
+          "Spread creates a shallow copy. A nested object is still shared unless you copy that level too. This distinction matters when you update application state or keep a previous version for comparison.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: 'const learner = { name: "Ada", completed: 2 };\nconst { name } = learner;\nconst updated = { ...learner, completed: 3 };\nconsole.log(name); // "Ada"\nconsole.log(learner.completed); // 2\nconsole.log(updated.completed); // 3',
+        },
+        example:
+          "To display a learner’s next level without changing their current profile, create a new profile object with the updated level property.",
+      },
+      {
+        heading: "JSON moves data across a boundary",
+        paragraphs: [
+          "JSON.stringify converts supported data into JSON text, and JSON.parse reads JSON text back into JavaScript values. JSON is useful for a browser storage entry or an HTTP response body.",
+          "Not every JavaScript value survives a JSON round trip. Functions and undefined object properties are omitted, for example. Parsing invalid JSON throws an error, and valid JSON still needs validation before you trust its shape.",
+        ],
+      },
+    ],
+    takeaway:
+      "Use objects to model related facts, treat spread as a shallow copy, and validate data when it crosses a boundary.",
+    quiz: [
+      {
+        id: "js-objects-data-1",
+        question:
+          "How do you read a property whose name is stored in a variable called key?",
+        options: [
+          "profile.key always reads that dynamic property",
+          "profile(key)",
+          "profile[key]",
+          "profile::key",
+        ],
+        correctIndex: 2,
+        explanation:
+          "Bracket notation evaluates the expression inside the brackets. profile.key reads the literal property named key instead.",
+      },
+      {
+        id: "js-objects-data-2",
+        question:
+          "What does { ...original } do when original contains a nested object?",
+        options: [
+          "Deeply clones every nested value",
+          "Freezes the original object",
+          "Converts all properties to strings",
+          "Creates a new outer object while sharing the nested object",
+        ],
+        correctIndex: 3,
+        explanation:
+          "Object spread is shallow. Nested object values are copied as references, so changing that nested object can affect both outer objects.",
+      },
+    ],
+  },
+  {
+    id: "js-async-javascript",
+    number: 6,
+    title: "Async JavaScript",
+    summary:
+      "Work with promises, await a result, and handle failure as part of the flow.",
+    duration: 7,
+    category: "Asynchronous code",
+    sections: [
+      {
+        heading: "A promise represents a future result",
+        paragraphs: [
+          "Some work, such as a network request, completes later. A promise represents an operation that can be pending, fulfilled with a value, or rejected with a reason. Attach handlers with then and catch, or use async and await to work with its result.",
+          "An async function always returns a promise. await pauses that async function until the awaited value settles; it does not pause the entire JavaScript runtime or block the browser from handling other work.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: 'async function loadGreeting() {\n  const message = await Promise.resolve("Hello, developer!");\n  return message;\n}\n\nloadGreeting().then((message) => console.log(message));',
+        },
+      },
+      {
+        heading: "Treat failure as an expected path",
+        paragraphs: [
+          "Use try/catch around an awaited operation when you can provide a meaningful recovery, fallback, or message. A rejected promise becomes an exception at its await expression. finally can clean up after success or failure.",
+          "fetch rejects for problems such as network failures, but HTTP error statuses such as 404 do not automatically reject it. Check response.ok before treating the response as a successful result.",
+        ],
+        snippet: {
+          language: "javascript",
+          code: 'async function loadLessons() {\n  const response = await fetch("/api/lessons");\n  if (!response.ok) {\n    throw new Error(`Request failed: ${response.status}`);\n  }\n  return response.json();\n}',
+        },
+        example:
+          "A lesson screen can show a loading state, replace it with data on success, and show a retry message on failure. The /api/lessons URL in the example represents an endpoint you would need to implement; this starter’s lesson data is local.",
+      },
+      {
+        heading: "Wait together when the work is independent",
+        paragraphs: [
+          "Awaiting each independent operation before starting the next can waste time. Promise.all starts waiting for a group of promises together and returns their values in input order when all fulfill.",
+          "Promise.all rejects if any input promise rejects. It does not cancel the other operations. Choose the error behavior your interface needs, and avoid starting work in parallel when one task depends on another’s result.",
+        ],
+      },
+    ],
+    takeaway:
+      "Use promises for results that arrive later, handle rejection intentionally, and check HTTP status when working with fetch.",
+    quiz: [
+      {
+        id: "js-async-javascript-1",
+        question: "What does an async function return?",
+        options: [
+          "A promise, even when it returns a plain value",
+          "Only undefined",
+          "A value that blocks the whole browser",
+          "A string containing its source code",
+        ],
+        correctIndex: 0,
+        explanation:
+          "An async function always returns a promise. A returned plain value fulfills that promise; a thrown error rejects it.",
+      },
+      {
+        id: "js-async-javascript-2",
+        question:
+          "fetch receives an HTTP 404 response. What should your code check?",
+        options: [
+          "Nothing, because fetch rejects for every HTTP error",
+          "response.ok or response.status",
+          "Whether the response URL contains a dot",
+          "Whether the browser has a dark theme",
+        ],
+        correctIndex: 1,
+        explanation:
+          "fetch does not reject solely because of an HTTP error status. Inspect response.ok or response.status and handle the error deliberately.",
+      },
+    ],
+  },
+];
+
+export type LearningTrack = {
+  id: string;
+  title: string;
+  description: string;
+  language: string;
+  lessons: Lesson[];
+};
+
+export const tracks: LearningTrack[] = [
+  {
+    id: "javascript",
+    title: "JavaScript essentials",
+    description:
+      "Build a practical foundation in the language of the web, from your first variable to asynchronous code.",
+    language: "JAVASCRIPT",
+    lessons: codingLessons,
+  },
+  {
+    id: "ai",
+    title: "AI foundations",
+    description:
+      "Understand the ideas behind AI, write better prompts, and build a responsible workflow.",
+    language: "AI LITERACY",
+    lessons,
+  },
+];
+
+export const allLessons: Lesson[] = [...codingLessons, ...lessons];
